@@ -570,5 +570,40 @@ def student_course_score(mssv, course):
         return make_response("", 204)
 
 
+# ==========================================
+# PHẦN 3: XỬ LÝ LỖI THỐNG NHẤT (CÂU 9)
+# ==========================================
+
+@app.errorhandler(400)
+@app.errorhandler(404)
+@app.errorhandler(405)
+def handle_error(error):
+    """Xử lý lỗi thống nhất cho 400, 404, 405 phân biệt /api/ (JSON) và HTML."""
+    code = getattr(error, "code", 500)
+    titles = {
+        400: "Dữ liệu không hợp lệ",
+        404: "Không tìm thấy",
+        405: "Phương thức không được hỗ trợ",
+    }
+    title = titles.get(code, "Lỗi")
+    description = getattr(error, "description", "")
+
+    if request.path.startswith("/api/"):
+        return jsonify({
+            "error": title,
+            "detail": description,
+        }), code
+    else:
+        body = f"""
+        <div style="text-align: center; padding: 32px 16px;">
+            <h2 style="color: #dc2626; font-size: 1.6rem; margin-bottom: 12px;">Lỗi {code}: {escape(title)}</h2>
+            <p style="color: #475569; font-size: 1.05rem; margin-bottom: 24px;">{escape(description)}</p>
+            <p><a href="{url_for('home')}" class="btn">← Quay lại Trang chủ</a></p>
+        </div>
+        """
+        return layout(f"Lỗi {code}", body), code
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=8000)
+
