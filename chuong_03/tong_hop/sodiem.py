@@ -5,7 +5,7 @@ app = Flask(__name__)
 app.json.ensure_ascii = False
 app.config["JSON_AS_ASCII"] = False
 
-# Dữ liệu mẫu theo yêu cầu đề bài
+# Dữ liệu mẫu theo yêu cầu đề bài (chỉ phần này được sao chép từ đề)
 STUDENTS = {
     "23T1020001": {
         "name": "Nguyễn Văn An",
@@ -173,6 +173,12 @@ def layout(title, body):
             font-weight: 500;
             margin: 0 6px;
         }}
+        .filter-bar a.active {{
+            background: var(--primary);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }}
         .btn {{
             display: inline-block;
             background: var(--primary);
@@ -195,6 +201,16 @@ def layout(title, body):
             width: 320px;
             max-width: 100%;
         }}
+        .info-card {{
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 18px 24px;
+            margin-bottom: 24px;
+        }}
+        .info-card p {{
+            margin: 6px 0;
+        }}
     </style>
 </head>
 <body>
@@ -216,22 +232,242 @@ def layout(title, body):
 
 
 # ==========================================
-# CÁC ROUTE TẠM THỜI CHO PHẦN 0
+# PHẦN 1: GIAO DIỆN WEB (CÂU 1 – 6)
 # ==========================================
 
 @app.route("/")
 def home():
-    return layout("Trang chủ", "<p>Trang chủ tạm thời</p>")
+    """Câu 1. / : tổng số sinh viên, số lớp (không trùng), liên kết đến /students và /api/students."""
+    total_students = len(STUDENTS)
+    classes = set(sv["lop"] for sv in STUDENTS.values())
+    total_classes = len(classes)
+
+    body = f"""
+    <h2>Tổng quan hệ thống</h2>
+    <div class="info-card">
+        <p><strong>Tổng số sinh viên:</strong> {total_students}</p>
+        <p><strong>Số lớp học:</strong> {total_classes}</p>
+    </div>
+    <div style="margin-top: 20px;">
+        <p style="margin-bottom: 12px;">
+            👉 <a href="{url_for('student_list')}" class="btn">Xem danh sách sinh viên (/students)</a>
+        </p>
+        <p>
+            👉 <a href="{url_for('api_students')}">Truy cập API danh sách sinh viên (/api/students)</a>
+        </p>
+    </div>
+    """
+    return layout("Trang chủ", body)
 
 
 @app.route("/students")
 def student_list():
-    return layout("Sinh viên", "<p>Danh sách sinh viên tạm thời</p>")
+    """Câu 2. /students : danh sách sinh viên, lọc theo lớp ?lop=..."""
+    lop_filter = request.args.get("lop", "").strip()
+
+    # Lấy danh sách các lớp duy nhất từ dữ liệu, sắp xếp
+    all_classes = sorted(list(set(sv["lop"] for sv in STUDENTS.values())))
+
+    # Tạo thanh lọc: Tất cả | K47A | K47B | K47C
+    filter_links = []
+    active_all = ' class="active"' if not lop_filter else ''
+    filter_links.append(f'<a href="{url_for("student_list")}"{active_all}>Tất cả</a>')
+
+    for c in all_classes:
+        active_class = ' class="active"' if lop_filter.upper() == c.upper() else ''
+        filter_links.append(f'<a href="{url_for("student_list", lop=c)}"{active_class}>{escape(c)}</a>')
+
+    filter_bar_html = f"""
+    <div class="filter-bar">
+        <strong>Lọc theo lớp:</strong> {" | ".join(filter_links)}
+    </div>
+    """
+
+    # Lọc danh sách sinh viên
+    filtered_summaries = []
+    for mssv in sorted(STUDENTS.keys()):
+        summary = student_summary(mssv)
+        if lop_filter:
+            if summary["lop"].upper() == lop_filter.upper():
+                filtered_summaries.append(summary)
+        else:
+            filtered_summaries.append(summary)
+
+    if not filtered_summaries:
+        body = f"""
+        <h2>Danh sách sinh viên</h2>
+        {filter_bar_html}
+        <p style="margin-top: 16px; color: #dc2626; font-style: italic;">Không có sinh viên phù hợp.</p>
+        """
+        return layout("Danh sách sinh viên", body)
+
+    # Tạo bảng sinh viên
+    rows = []
+    for s in filtered_summaries:
+        avg_display = f"{s['average']}" if s["average"] is not None else "—"
+        rows.append(f"""
+        <tr>
+            <td><a href="{url_for('student_detail', mssv=s['mssv'])}">{escape(s['mssv'])}</a></td>
+            <td>{escape(s['name'])}</td>
+            <td>{escape(s['lop'])}</td>
+            <td>{avg_display}</td>
+            <td>{escape(s['rank'])}</td>
+        </tr>
+        """)
+
+    table_html = f"""
+    <table>
+        <thead>
+            <tr>
+                <th>MSSV</th>
+                <th>Họ tên</th>
+                <th>Lớp</th>
+                <th>Điểm TB</th>
+                <th>Xếp loại</th>
+            </tr>
+        </thead>
+        <tbody>
+            {"".join(rows)}
+        </tbody>
+    </table>
+    """
+
+    body = f"""
+    <h2>Danh sách sinh viên</h2>
+    {filter_bar_html}
+    {table_html}
+    """
+    return layout("Danh sách sinh viên", body)
+
+
+@app.route("/students/<mssv>")
+def student_detail(mssv):
+    """Câu 3. /students/<mssv> : chi tiết sinh viên và bảng điểm từng học phần."""
+    if mssv not in STUDENTS:
+        abort(404, description=f"Không có sinh viên với MSSV = {mssv}.")
+
+    summary = student_summary(mssv)
+    avg_display = f"{summary['average']}" if summary["average"] is not None else "—"
+
+    # Bảng điểm từng học phần
+    score_rows = []
+    if summary["scores"]:
+        for course, score in summary["scores"].items():
+            score_rows.append(f"""
+            <tr>
+                <td>{escape(course)}</td>
+                <td>{score}</td>
+            </tr>
+            """)
+        scores_table = f"""
+        <table>
+            <thead>
+                <tr>
+                    <th>Học phần</th>
+                    <th>Điểm</th>
+                </tr>
+            </thead>
+            <tbody>
+                {"".join(score_rows)}
+            </tbody>
+        </table>
+        """
+    else:
+        scores_table = "<p><em>Chưa có điểm học phần nào.</em></p>"
+
+    # Liên kết tải CSV (Câu 5) và Link rút gọn (Câu 4)
+    csv_url = url_for("export_student_csv", mssv=mssv)
+    short_url = url_for("short_student_detail", mssv=mssv)
+
+    body = f"""
+    <h2>Chi tiết sinh viên</h2>
+    <div class="info-card">
+        <p><strong>MSSV:</strong> {escape(summary['mssv'])}</p>
+        <p><strong>Họ tên:</strong> {escape(summary['name'])}</p>
+        <p><strong>Lớp:</strong> <a href="{url_for('student_list', lop=summary['lop'])}">{escape(summary['lop'])}</a></p>
+        <p><strong>Điểm trung bình:</strong> {avg_display}</p>
+        <p><strong>Xếp loại:</strong> {escape(summary['rank'])}</p>
+        <p><strong>Link rút gọn:</strong> <a href="{short_url}">{short_url}</a></p>
+    </div>
+
+    <h3>Bảng điểm học phần</h3>
+    {scores_table}
+
+    <div style="margin-top: 20px;">
+        <a href="{csv_url}" class="btn">Tải bảng điểm (CSV)</a>
+    </div>
+    """
+    return layout(f"Sinh viên {summary['name']}", body)
+
+
+@app.route("/sv/<mssv>")
+def short_student_detail(mssv):
+    """Câu 4. /sv/<mssv> : chuyển hướng tới /students/<mssv> với mã 301."""
+    return redirect(url_for("student_detail", mssv=mssv), code=301)
+
+
+@app.route("/students/<mssv>/export")
+def export_student_csv(mssv):
+    """Câu 5. /students/<mssv>/export : xuất bảng điểm CSV tải file xuống."""
+    if mssv not in STUDENTS:
+        abort(404, description=f"Không có sinh viên với MSSV = {mssv}.")
+
+    student = STUDENTS[mssv]
+    lines = ["hoc_phan,diem"]
+    for course, score in student["scores"].items():
+        lines.append(f"{course},{score}")
+    csv_data = "\n".join(lines) + "\n"
+
+    response = make_response(csv_data)
+    response.headers["Content-Type"] = "text/csv; charset=utf-8"
+    response.headers["Content-Disposition"] = f"attachment; filename=diem_{mssv}.csv"
+    return response
 
 
 @app.route("/search")
 def search():
-    return layout("Tìm kiếm", "<p>Tìm kiếm tạm thời</p>")
+    """Câu 6. /search?q=... : tìm kiếm an toàn, chống XSS."""
+    q = request.args.get("q", "")
+    escaped_q = escape(q)
+
+    search_result_html = ""
+    if "q" in request.args:
+        trimmed_q = q.strip().lower()
+        matched_students = []
+        if trimmed_q:
+            for mssv, sv in STUDENTS.items():
+                if trimmed_q in sv["name"].lower() or trimmed_q in mssv.lower():
+                    matched_students.append(student_summary(mssv))
+
+        result_count = len(matched_students)
+        search_result_html = f"<p style='margin-top: 16px;'>Tìm thấy {result_count} kết quả cho “{escaped_q}”</p>"
+
+        if matched_students:
+            result_items = []
+            for s in matched_students:
+                result_items.append(
+                    f'<li><a href="{url_for("student_detail", mssv=s["mssv"])}">{escape(s["name"])} ({escape(s["mssv"])} - {escape(s["lop"])})</a></li>'
+                )
+            search_result_html += f"<ul style='margin: 12px 24px;'>{''.join(result_items)}</ul>"
+
+    body = f"""
+    <h2>Tìm kiếm sinh viên</h2>
+    <form method="GET" action="{url_for('search')}" style="margin-top: 16px;">
+        <input type="text" name="q" value="{escaped_q}" placeholder="Nhập tên hoặc MSSV...">
+        <button type="submit" class="btn">Tìm kiếm</button>
+    </form>
+    {search_result_html}
+    """
+    return layout("Tìm kiếm", body)
+
+
+# ==========================================
+# KHAI BÁO TẠM CHO ROUTE API (PHẦN 2 SẼ HOÀN THIỆN)
+# ==========================================
+
+@app.route("/api/students")
+def api_students():
+    return jsonify([])
 
 
 if __name__ == "__main__":
