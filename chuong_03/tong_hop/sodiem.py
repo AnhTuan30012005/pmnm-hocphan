@@ -462,12 +462,112 @@ def search():
 
 
 # ==========================================
-# KHAI BÁO TẠM CHO ROUTE API (PHẦN 2 SẼ HOÀN THIỆN)
+# PHẦN 2: API JSON (CÂU 7 – 8)
 # ==========================================
 
 @app.route("/api/students")
 def api_students():
-    return jsonify([])
+    """Câu 7. GET /api/students : danh sách sinh viên JSON có lọc lop và min_avg."""
+    lop_filter = request.args.get("lop", "").strip()
+
+    # Phân biệt trường hợp thiếu tham số và tham số sai kiểu min_avg
+    min_avg = None
+    if "min_avg" in request.args:
+        try:
+            min_avg = float(request.args["min_avg"])
+        except ValueError:
+            abort(400, description="min_avg phải là một số thực.")
+
+    result = []
+    for mssv in sorted(STUDENTS.keys()):
+        summary = student_summary(mssv)
+        # Lọc theo lop (không phân biệt hoa thường)
+        if lop_filter and summary["lop"].upper() != lop_filter.upper():
+            continue
+        # Lọc theo min_avg: chỉ sinh viên có điểm TB >= min_avg, bỏ qua sinh viên chưa có điểm
+        if min_avg is not None:
+            if summary["average"] is None or summary["average"] < min_avg:
+                continue
+        result.append(summary)
+
+    return jsonify(result)
+
+
+@app.route("/api/students/<mssv>")
+def api_student_detail(mssv):
+    """Câu 7. GET /api/students/<mssv> : thông tin chi tiết một sinh viên dạng JSON."""
+    if mssv not in STUDENTS:
+        abort(404, description=f"Không có sinh viên với MSSV = {mssv}.")
+    return jsonify(student_summary(mssv))
+
+
+@app.route("/api/students/<mssv>/scores/<course>", methods=["GET", "PUT", "DELETE"])
+def student_course_score(mssv, course):
+    """Câu 8. Quản lý điểm một học phần (GET, PUT, DELETE). Mã học phần lưu hoa."""
+    # Mọi method: MSSV không tồn tại -> 404
+    if mssv not in STUDENTS:
+        abort(404, description=f"Không có sinh viên với MSSV = {mssv}.")
+
+    student = STUDENTS[mssv]
+    course_key = course.upper()
+
+    # 1. GET: Xem điểm
+    if request.method == "GET":
+        if course_key not in student["scores"]:
+            abort(404, description=f"Học phần {course_key} chưa có điểm.")
+        return jsonify({
+            "mssv": mssv,
+            "course": course_key,
+            "score": student["scores"][course_key],
+        })
+
+    # 2. PUT: Thêm hoặc sửa điểm
+    elif request.method == "PUT":
+        if "score" not in request.args:
+            abort(400, description="Thiếu tham số score.")
+
+        raw_score = request.args["score"]
+        try:
+            score_val = float(raw_score)
+        except ValueError:
+            abort(400, description="score phải là một số thực.")
+
+        if score_val < 0 or score_val > 10:
+            abort(400, description="score phải nằm trong đoạn [0, 10].")
+
+        # Chuẩn hóa số nguyên nếu không có phần thập phân
+        if score_val.is_integer() and "." not in raw_score:
+            score_saved = int(score_val)
+        else:
+            score_saved = score_val
+
+        is_new = course_key not in student["scores"]
+        student["scores"][course_key] = score_saved
+        new_avg = average(student["scores"])
+
+        response_data = {
+            "mssv": mssv,
+            "course": course_key,
+            "score": score_saved,
+            "average": new_avg,
+        }
+
+        if is_new:
+            # 201 + header Location trỏ về chính URL này
+            location_url = url_for("student_course_score", mssv=mssv, course=course_key)
+            resp = make_response(jsonify(response_data), 201)
+            resp.headers["Location"] = location_url
+            return resp
+        else:
+            # 200
+            return jsonify(response_data), 200
+
+    # 3. DELETE: Xoá điểm
+    elif request.method == "DELETE":
+        if course_key not in student["scores"]:
+            abort(404, description=f"Học phần {course_key} chưa có điểm.")
+        del student["scores"][course_key]
+        return make_response("", 204)
 
 
 if __name__ == "__main__":
