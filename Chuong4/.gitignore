@@ -18,3 +18,5 @@ ENV/
 
 # OS
 .DS_Store
+
+*.zip
