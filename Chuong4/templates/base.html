@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %} - Sông Hương</title>
+
+    {% block styles %}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        nav a {
+            margin-right: 10px;
+            text-decoration: none;
+            color: blue;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    {% endblock %}
+</head>
+<body>
+    <!-- Nhúng menu từ file con _navbar.html -->
+    {% include "_navbar.html" %}
+
+    <!-- Khung nội dung riêng của các trang con -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Nhúng chân trang từ file con _footer.html -->
+    {% include "_footer.html" %}
+</body>
+</html>

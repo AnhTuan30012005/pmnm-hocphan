@@ -1,0 +1,41 @@
+{# Macro hiển thị thẻ thông tin của một món #}
+{% macro item_card(item) %}
+<div class="item-card {% if not item.available %}het-hang{% endif %}">
+    <h3>{{ item.name | title }}</h3>
+    <p>Giá: {{ item.price | vnd }}</p>
+    <p>Tình trạng: 
+        {% if item.available %}
+            <span>Còn hàng</span>
+        {% else %}
+            <span>Hết hàng</span>
+        {% endif %}
+    </p>
+</div>
+{% endmacro %}
+
+
+{# Macro hiển thị thanh phân trang theo chuẩn Bài 4 #}
+{% macro pagination(page, pages, endpoint) %}
+<div class="pagination">
+    {# Nút Trước: chỉ hiện từ trang 2 trở đi #}
+    {% if page > 1 %}
+        <a href="{{ url_for(endpoint, page=page - 1) }}">&laquo; Trước</a> &middot;
+    {% endif %}
+
+    {# Danh sách các số trang #}
+    {% for p in range(1, pages + 1) %}
+        {% if p == page %}
+            {# Trang hiện tại: in đậm, không phải là link #}
+            <strong>{{ p }}</strong>
+        {% else %}
+            <a href="{{ url_for(endpoint, page=p) }}">{{ p }}</a>
+        {% endif %}
+        {% if not loop.last %} &middot; {% endif %}
+    {% endfor %}
+
+    {# Nút Sau: chỉ hiện khi chưa phải trang cuối #}
+    {% if page < pages %}
+        &middot; <a href="{{ url_for(endpoint, page=page + 1) }}">Sau &raquo;</a>
+    {% endif %}
+</div>
+{% endmacro %}

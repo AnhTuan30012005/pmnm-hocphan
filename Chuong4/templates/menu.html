@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_macros.html" import item_card, pagination %}
+
+{% block title %}Thực đơn{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <style>
+        .het-hang {
+            color: gray;
+            text-decoration: line-through;
+        }
+        .item-card {
+            border: 1px solid #ccc;
+            padding: 10px 15px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            max-width: 400px;
+        }
+        .item-card h3 {
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+        .item-card p {
+            margin: 4px 0;
+        }
+        .pagination {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>Thực đơn</h1>
+
+    <div class="menu-list">
+        {% for item in items %}
+            {{ item_card(item) }}
+        {% else %}
+            <p>Chưa có món nào.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Thanh phân trang gọi từ macro -->
+    {{ pagination(page, pages, 'show_menu') }}
+{% endblock %}
