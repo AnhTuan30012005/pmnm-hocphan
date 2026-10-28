@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Bài 2 - Tính điểm học phần{% endblock %}
+
+{% block content %}
+    <div class="mb-3">
+        <h4 class="fw-bold text-white mb-1">Bài 2 ★. Điểm học phần</h4>
+        <p class="text-secondary small mb-0">Hệ số: CC 10%, GK 30%, CK 60%</p>
+    </div>
+
+    <div class="phone-card">
+        <form method="POST" action="{{ url_for('bai2') }}" novalidate>
+            
+            <!-- Ô Chuyên cần (10%) -->
+            <div class="form-group mb-3">
+                <label for="cc">Điểm chuyên cần - CC (10%):</label>
+                <input type="text" id="cc" name="cc" value="{{ cc }}" class="form-control {% if errors.cc %}input-error{% endif %}" placeholder="Nhập từ 0 đến 10 (ví dụ: 9 hoặc 8,5)">
+                {% if errors.cc %}
+                    <div class="error-text">{{ errors.cc }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Ô Giữa kỳ (30%) -->
+            <div class="form-group mb-3">
+                <label for="gk">Điểm giữa kỳ - GK (30%):</label>
+                <input type="text" id="gk" name="gk" value="{{ gk }}" class="form-control {% if errors.gk %}input-error{% endif %}" placeholder="Nhập từ 0 đến 10 (ví dụ: 8 hoặc 7,5)">
+                {% if errors.gk %}
+                    <div class="error-text">{{ errors.gk }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Ô Cuối kỳ (60%) -->
+            <div class="form-group mb-4">
+                <label for="ck">Điểm cuối kỳ - CK (60%):</label>
+                <input type="text" id="ck" name="ck" value="{{ ck }}" class="form-control {% if errors.ck %}input-error{% endif %}" placeholder="Nhập từ 0 đến 10 (ví dụ: 9 hoặc 7,5)">
+                {% if errors.ck %}
+                    <div class="error-text">{{ errors.ck }}</div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn-calc">
+                <i class="bi bi-award me-1"></i> Tính điểm học phần
+            </button>
+        </form>
+
+        <!-- Hiển thị kết quả -->
+        {% if result %}
+            <div class="result-box">
+                Kết quả: {{ result }}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

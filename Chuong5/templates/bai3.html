@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Bài 3 - Tính chỉ số BMI{% endblock %}
+
+{% block content %}
+    <div class="mb-3">
+        <h4 class="fw-bold text-white mb-1">Bài 3 ★. Tính chỉ số BMI</h4>
+        <p class="text-secondary small mb-0">Chuẩn thể trạng người châu Á</p>
+    </div>
+
+    <div class="phone-card">
+        <form method="POST" action="{{ url_for('bai3') }}" novalidate>
+            
+            <!-- Ô Chiều cao (cm) -->
+            <div class="form-group mb-3">
+                <label for="cao">Chiều cao (cm):</label>
+                <input type="text" id="cao" name="cao" value="{{ cao }}" class="form-control {% if errors.cao %}input-error{% endif %}" placeholder="Nhập từ 50 đến 250 (ví dụ: 170)">
+                {% if errors.cao %}
+                    <div class="error-text">{{ errors.cao }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Ô Cân nặng (kg) -->
+            <div class="form-group mb-4">
+                <label for="nang">Cân nặng (kg):</label>
+                <input type="text" id="nang" name="nang" value="{{ nang }}" class="form-control {% if errors.nang %}input-error{% endif %}" placeholder="Nhập từ 10 đến 300 (ví dụ: 65 hoặc 65,5)">
+                {% if errors.nang %}
+                    <div class="error-text">{{ errors.nang }}</div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn-calc">
+                <i class="bi bi-heart-pulse me-1"></i> Tính chỉ số BMI
+            </button>
+        </form>
+
+        <!-- Hiển thị kết quả -->
+        {% if result %}
+            <div class="result-box result-{{ color }}">
+                Kết quả: {{ result }}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

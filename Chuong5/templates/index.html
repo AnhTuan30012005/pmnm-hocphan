@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Trang chủ - Buổi 7{% endblock %}
+
+{% block content %}
+    <div class="text-center my-3">
+        <div class="display-6 fw-bold text-white mb-1" style="font-size: 1.6rem;">📱 Tiện ích Buổi 7</div>
+        <p class="text-secondary small">Chương 5 · Form và Xử lý dữ liệu</p>
+    </div>
+
+    <!-- Danh sách các bài tập dạng thẻ ứng dụng điện thoại -->
+    <div class="d-flex flex-column gap-3 mt-4">
+        
+        <!-- Thẻ Bài 1 -->
+        <a href="{{ url_for('bai1') }}" class="text-decoration-none">
+            <div class="phone-card p-3 d-flex align-items-center justify-content-between hover-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 bg-primary bg-opacity-25 p-3 text-primary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="bi bi-calculator-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-white fs-6">Bài 1: Máy tính cơ bản</div>
+                        <div class="text-secondary small">Phép toán (+, -, *, /)</div>
+                    </div>
+                </div>
+                <i class="bi bi-chevron-right text-secondary"></i>
+            </div>
+        </a>
+
+        <!-- Thẻ Bài 2 -->
+        <a href="{{ url_for('bai2') }}" class="text-decoration-none">
+            <div class="phone-card p-3 d-flex align-items-center justify-content-between hover-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 bg-success bg-opacity-25 p-3 text-success d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="bi bi-mortarboard-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-white fs-6">Bài 2: Tính điểm học phần</div>
+                        <div class="text-secondary small">Xếp loại & Điểm liệt</div>
+                    </div>
+                </div>
+                <i class="bi bi-chevron-right text-secondary"></i>
+            </div>
+        </a>
+
+        <!-- Thẻ Bài 3 -->
+        <a href="{{ url_for('bai3') }}" class="text-decoration-none">
+            <div class="phone-card p-3 d-flex align-items-center justify-content-between hover-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 bg-warning bg-opacity-25 p-3 text-warning d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="bi bi-heart-pulse-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-white fs-6">Bài 3: Tính chỉ số BMI</div>
+                        <div class="text-secondary small">Thể trạng & Cân nặng chuẩn</div>
+                    </div>
+                </div>
+                <i class="bi bi-chevron-right text-secondary"></i>
+            </div>
+        </a>
+
+    </div>
+
+    <div class="text-center mt-4">
+        <span class="badge bg-dark border border-secondary text-secondary" style="font-size: 0.72rem;">
+            Đại học Khoa học - Đại học Huế
+        </span>
+    </div>
+{% endblock %}
