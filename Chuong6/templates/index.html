@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Danh sách Sinh viên · Chương 6{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0 text-primary">Danh sách Sinh viên</h2>
+        <p class="text-muted mb-0">Lưu trữ và quản lý trực tiếp qua SQLite & Flask-SQLAlchemy</p>
+    </div>
+    <a href="{{ url_for('add_student') }}" class="btn btn-success px-4 py-2">
+        <i class="bi bi-person-plus-fill me-1"></i> Thêm Sinh viên mới
+    </a>
+</div>
+
+<div class="card p-3">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col" style="width: 70px;">ID</th>
+                    <th scope="col">MSSV</th>
+                    <th scope="col">Họ và tên</th>
+                    <th scope="col">Điểm GPA</th>
+                    <th scope="col" class="text-center" style="width: 180px;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sv in students %}
+                <tr>
+                    <td class="fw-bold text-muted">{{ sv.id }}</td>
+                    <td><span class="badge bg-secondary font-monospace">{{ sv.mssv }}</span></td>
+                    <td class="fw-semibold">{{ sv.name }}</td>
+                    <td>
+                        <span class="badge {% if sv.gpa >= 3.6 %}bg-success{% elif sv.gpa >= 3.2 %}bg-primary{% elif sv.gpa >= 2.5 %}bg-info text-dark{% else %}bg-warning text-dark{% endif %}">
+                            {{ "%.2f"|format(sv.gpa) }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('edit_student', id=sv.id) }}" class="btn btn-outline-primary" title="Chỉnh sửa">
+                                <i class="bi bi-pencil-square"></i> Sửa
+                            </a>
+                            <form action="{{ url_for('delete_student', id=sv.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa sinh viên {{ sv.name }} ({{ sv.mssv }}) không?');">
+                                <button type="submit" class="btn btn-outline-danger" title="Xóa">
+                                    <i class="bi bi-trash-fill"></i> Xóa
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                        Chưa có sinh viên nào trong cơ sở dữ liệu.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
