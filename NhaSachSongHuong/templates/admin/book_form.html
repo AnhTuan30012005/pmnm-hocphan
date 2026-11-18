@@ -1,0 +1,142 @@
+{% extends "admin_base.html" %}
+
+{% block title %}{% if is_edit %}Sửa sách: {{ book.title }}{% else %}Thêm sách mới{% endif %} · Quản trị Nhà sách Sông Hương{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Tổng quan</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin_books') }}">Quản lý sách</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% if is_edit %}Sửa sách #{{ book.id }}{% else %}Thêm sách mới{% endif %}</li>
+        </ol>
+    </nav>
+    <h2 class="fw-bold mb-0">{% if is_edit %}✏️ Sửa thông tin sách{% else %}➕ Thêm sách mới vào kho{% endif %}</h2>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data" novalidate>
+                    {{ form.csrf_token }}
+
+                    <!-- Tiêu đề sách -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="title">{{ form.title.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else ""), placeholder="Nhập tên sách đầy đủ...") }}
+                        {% for error in form.title.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Tác giả -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold" for="author">{{ form.author.label.text }} <span class="text-danger">*</span></label>
+                            {{ form.author(class="form-control" + (" is-invalid" if form.author.errors else ""), placeholder="Tên tác giả...") }}
+                            {% for error in form.author.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Danh mục -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold" for="category_id">{{ form.category_id.label.text }} <span class="text-danger">*</span></label>
+                            {{ form.category_id(class="form-select" + (" is-invalid" if form.category_id.errors else "")) }}
+                            {% for error in form.category_id.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Năm xuất bản -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold" for="year">{{ form.year.label.text }}</label>
+                            {{ form.year(class="form-control" + (" is-invalid" if form.year.errors else ""), placeholder="VD: 2024") }}
+                            {% for error in form.year.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Giá bán -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold" for="price">{{ form.price.label.text }} (VNĐ) <span class="text-danger">*</span></label>
+                            {{ form.price(class="form-control" + (" is-invalid" if form.price.errors else ""), placeholder="Tối thiểu 1,000đ") }}
+                            {% for error in form.price.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Số lượng tồn kho -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold" for="stock">{{ form.stock.label.text }} <span class="text-danger">*</span></label>
+                            {{ form.stock(class="form-control" + (" is-invalid" if form.stock.errors else ""), placeholder=">= 0") }}
+                            {% for error in form.stock.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Upload ảnh bìa -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="image">{{ form.image.label.text }}</label>
+                        {{ form.image(class="form-control" + (" is-invalid" if form.image.errors else ""), accept=".png,.jpg,.jpeg,.webp") }}
+                        <div class="form-text">Định dạng hỗ trợ: PNG, JPG, JPEG, WEBP. Dung lượng tối đa: 2MB.</div>
+                        {% for error in form.image.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+
+                        {% if is_edit and book.image %}
+                        <div class="mt-3 p-3 bg-light rounded border d-flex align-items-center gap-3">
+                            <img src="{{ url_for('static', filename='uploads/' + book.image) }}" 
+                                 alt="Ảnh hiện tại" class="rounded shadow-sm" style="width: 60px; height: 80px; object-fit: cover;">
+                            <div>
+                                <small class="text-muted d-block">Ảnh bìa hiện tại:</small>
+                                <span class="fw-semibold">{{ book.image }}</span>
+                                <small class="text-muted d-block">(Chọn ảnh mới bên trên nếu muốn thay đổi)</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Mô tả tóm tắt sách -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold" for="description">{{ form.description.label.text }}</label>
+                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="4", placeholder="Giới thiệu nội dung sách...") }}
+                        {% for error in form.description.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Nút hành động -->
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                            <i class="bi bi-save me-1"></i> {% if is_edit %}Cập nhật thông tin{% else %}Lưu sách mới{% endif %}
+                        </button>
+                        <a href="{{ url_for('admin_books') }}" class="btn btn-outline-secondary">
+                            Hủy bỏ & Quay lại
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hướng dẫn / Thông tin bên phải -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 bg-light mb-4">
+            <div class="card-body">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-info-circle-fill text-primary me-2"></i>Quy định dữ liệu sách</h6>
+                <ul class="text-muted small ps-3 mb-0" style="line-height: 1.8;">
+                    <li><strong>Tên sách:</strong> Bắt buộc, không được trùng với tên sách đã có trong cơ sở dữ liệu.</li>
+                    <li><strong>Giá bán:</strong> Tối thiểu 1,000 VNĐ. Giá sách khi cập nhật sẽ không làm thay đổi giá trong các đơn hàng đã tạo trước đó (tính bảo toàn giá lịch sử).</li>
+                    <li><strong>Tồn kho:</strong> Nếu tồn kho = 0, khách hàng sẽ không thể bấm thêm vào giỏ hàng.</li>
+                    <li><strong>Ảnh bìa:</strong> Tự động đổi tên bằng UUID để tránh trùng lặp file trên máy chủ.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

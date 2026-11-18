@@ -159,3 +159,4 @@ curl -i "http://127.0.0.1:5000/api/books?category_id=1"
 curl -i http://127.0.0.1:5000/api/books/1
 ```
 *Kết quả:* Mã 200 OK, thông tin sách "Lập trình Python từ cơ bản đến nâng cao".
+

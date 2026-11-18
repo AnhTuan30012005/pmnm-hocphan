@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Giỏ Hàng · Nhà sách Sông Hương{% endblock %}
+
+{% block content %}
+<!-- Màn hình ③: Giỏ hàng -->
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <h3 class="fw-bold mb-0 text-dark">
+        <i class="bi bi-cart3 text-primary me-2"></i>Giỏ hàng
+        {% if cart.item_count > 0 %}
+        <span class="fs-6 text-muted fw-normal">({{ cart.item_count }} đầu sách)</span>
+        {% endif %}
+    </h3>
+    <a href="{{ url_for('book_list') }}" class="btn btn-outline-secondary btn-sm">
+        ← Tiếp tục mua sách
+    </a>
+</div>
+
+{% if cart.cart_items %}
+<div class="card p-3 mb-4 shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 80px;">Ảnh</th>
+                    <th>Sách</th>
+                    <th class="text-end" style="width: 140px;">Đơn giá</th>
+                    <th class="text-center" style="width: 160px;">Số lượng</th>
+                    <th class="text-end" style="width: 160px;">Thành tiền</th>
+                    <th class="text-center" style="width: 80px;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart.cart_items %}
+                <tr>
+                    <td>
+                        {% if item.book.image %}
+                        <img src="{{ url_for('static', filename='uploads/' ~ item.book.image) }}" class="rounded border" style="width: 50px; height: 65px; object-fit: cover;" alt="{{ item.book.title }}">
+                        {% else %}
+                        <div class="rounded border bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 65px;">
+                            <i class="bi bi-book text-muted"></i>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('book_detail', id=item.book.id) }}" class="fw-bold text-dark text-decoration-none">
+                            {{ item.book.title }}
+                        </a>
+                        <small class="text-muted d-block">{{ item.book.author }}</small>
+                        <small class="text-secondary">Tồn kho: {{ item.book.stock }} cuốn</small>
+                    </td>
+                    <td class="text-end fw-semibold text-secondary">
+                        {{ item.unit_price | vnd }}
+                    </td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm border rounded">
+                            <!-- Nút trừ -->
+                            <form action="{{ url_for('update_cart_item', book_id=item.book.id, action='decrease') }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-light px-2 py-1 border-0" title="Giảm 1">
+                                    <strong>−</strong>
+                                </button>
+                            </form>
+                            <span class="px-3 py-1 fw-bold align-self-center bg-white">{{ item.quantity }}</span>
+                            <!-- Nút cộng (bị khóa khi bằng tồn kho) -->
+                            <form action="{{ url_for('update_cart_item', book_id=item.book.id, action='increase') }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-light px-2 py-1 border-0" title="Tăng 1" {% if item.is_max %}disabled{% endif %}>
+                                    <strong>+</strong>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                    <td class="text-end fw-bold text-danger fs-6">
+                        {{ item.line_total | vnd }}
+                    </td>
+                    <td class="text-center">
+                        <form action="{{ url_for('update_cart_item', book_id=item.book.id, action='remove') }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn bỏ sách \'{{ item.book.title }}\' khỏi giỏ hàng?');">
+                            <button type="submit" class="btn btn-outline-danger btn-sm border-0" title="Xóa">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="table-light">
+                    <td colspan="4" class="text-end fw-bold fs-5 py-3">Tổng cộng:</td>
+                    <td class="text-end fw-bold text-danger fs-4 py-3">{{ cart.subtotal | vnd }}</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<!-- Thanh điều hướng và nút Đặt hàng -->
+<div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('book_list') }}" class="btn btn-outline-secondary px-3">
+            ← Tiếp tục mua sách
+        </a>
+        <form action="{{ url_for('clear_cart') }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn làm trống toàn bộ giỏ hàng không?');">
+            <button type="submit" class="btn btn-outline-danger px-3">
+                <i class="bi bi-trash3 me-1"></i> Xoá giỏ hàng
+            </button>
+        </form>
+    </div>
+
+    <div>
+        <a href="{{ url_for('checkout') }}" class="btn btn-primary btn-lg px-4 fw-bold shadow-sm">
+            Đặt hàng →
+        </a>
+    </div>
+</div>
+
+{% else %}
+<div class="text-center py-5 card border-0 shadow-sm p-4">
+    <div class="p-3 bg-light rounded-circle d-inline-block mx-auto mb-3 text-muted">
+        <i class="bi bi-cart-x fs-1"></i>
+    </div>
+    <h4 class="fw-bold text-secondary">Giỏ hàng của bạn đang trống</h4>
+    <p class="text-muted">Hãy lựa chọn những cuốn sách yêu thích để thêm vào giỏ hàng nhé!</p>
+    <div class="mt-3">
+        <a href="{{ url_for('book_list') }}" class="btn btn-primary px-4 py-2 fw-semibold">
+            <i class="bi bi-book me-1"></i> Khám phá kho sách
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

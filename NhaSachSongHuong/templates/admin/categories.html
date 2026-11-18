@@ -1,0 +1,162 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Quản lý danh mục · Quản trị Nhà sách Sông Hương{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">🏷 Quản lý danh mục sách</h2>
+        <p class="text-muted mb-0">Thêm mới, cập nhật danh mục và kiểm soát số lượng đầu sách theo từng thể loại</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- CỘT TRÁI: DANH SÁCH DANH MỤC -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-list-task me-2 text-primary"></i>Danh sách danh mục hiện có
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3" style="width: 60px;">ID</th>
+                                <th>Tên danh mục</th>
+                                <th>Mô tả</th>
+                                <th class="text-center" style="width: 120px;">Số đầu sách</th>
+                                <th class="text-end pe-3" style="width: 130px;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if cat_counts %}
+                                {% for cat, count in cat_counts %}
+                                <tr>
+                                    <td class="ps-3 fw-bold text-muted">#{{ cat.id }}</td>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ cat.name }}</div>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ cat.description or '—' }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if count > 0 %}
+                                        <span class="badge bg-primary rounded-pill px-3">{{ count }} sách</span>
+                                        {% else %}
+                                        <span class="badge bg-light text-secondary border rounded-pill px-3">0 sách</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <div class="d-flex justify-content-end gap-1">
+                                            <!-- Nút mở modal sửa -->
+                                            <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                    data-bs-toggle="modal" data-bs-target="#editModal{{ cat.id }}" 
+                                                    title="Chỉnh sửa danh mục">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+
+                                            <!-- Nút xóa danh mục -->
+                                            {% if count > 0 %}
+                                            <button class="btn btn-sm btn-outline-secondary disabled" 
+                                                    title="Không thể xoá &quot;{{ cat.name }}&quot;: còn {{ count }} sách"
+                                                    data-bs-toggle="tooltip">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                            {% else %}
+                                            <form method="POST" action="{{ url_for('admin_delete_category', id=cat.id) }}" 
+                                                  class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục \'{{ cat.name }}\'?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa danh mục">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- MODAL SỬA DANH MỤC -->
+                                        <div class="modal fade" id="editModal{{ cat.id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog text-start">
+                                                <div class="modal-content">
+                                                    <form method="POST" action="{{ url_for('admin_edit_category', id=cat.id) }}">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title fw-bold">Chỉnh sửa danh mục #{{ cat.id }}</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold">Tên danh mục <span class="text-danger">*</span></label>
+                                                                <input type="text" name="name" class="form-control" value="{{ cat.name }}" required>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold">Mô tả</label>
+                                                                <textarea name="description" class="form-control" rows="3">{{ cat.description or '' }}</textarea>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                                                            <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">Chưa có danh mục nào.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CỘT PHẢI: FORM THÊM DANH MỤC MỚI -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm sticky-top" style="top: 1.5rem;">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-plus-circle me-2 text-success"></i>Thêm danh mục mới
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('admin_categories') }}" novalidate>
+                    {{ form.csrf_token }}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="name">{{ form.name.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="VD: Khoa học công nghệ") }}
+                        {% for error in form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" for="description">{{ form.description.label.text }}</label>
+                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="3", placeholder="Mô tả tóm tắt...") }}
+                        {% for error in form.description.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 shadow-sm">
+                        <i class="bi bi-check-lg me-1"></i> Thêm danh mục
+                    </button>
+                </form>
+
+                <div class="mt-4 pt-3 border-top">
+                    <small class="text-muted d-block">
+                        <strong>Quy tắc xóa danh mục:</strong> Hệ thống tự động chặn xóa nếu danh mục đang chứa ít nhất 1 đầu sách để đảm bảo tính toàn vẹn dữ liệu.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,188 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Quản lý đơn hàng · Quản trị Nhà sách Sông Hương{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">🧾 Quản lý đơn hàng</h2>
+        <p class="text-muted mb-0">Theo dõi tiến trình xử lý, chuyển trạng thái và tổng hợp doanh thu</p>
+    </div>
+</div>
+
+<!-- TABS TRẠNG THÁI & TÌM KIẾM -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white border-0 pt-3 pb-0">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <!-- Tabs trạng thái có hiển thị số lượng theo group_by -->
+            <ul class="nav nav-tabs card-header-tabs flex-grow-1">
+                <li class="nav-item">
+                    <a class="nav-link {% if status_tab == 'all' %}active fw-bold text-primary{% else %}text-secondary{% endif %}" 
+                       href="{{ url_for('admin_orders', status='all', q=search) }}">
+                        Tất cả <span class="badge bg-secondary ms-1 rounded-pill">{{ total_orders_count }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if status_tab == 'Chờ xác nhận' %}active fw-bold text-warning{% else %}text-secondary{% endif %}" 
+                       href="{{ url_for('admin_orders', status='Chờ xác nhận', q=search) }}">
+                        Chờ xác nhận <span class="badge bg-warning text-dark ms-1 rounded-pill">{{ status_group.get('Chờ xác nhận', 0) }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if status_tab == 'Đang giao' %}active fw-bold text-info{% else %}text-secondary{% endif %}" 
+                       href="{{ url_for('admin_orders', status='Đang giao', q=search) }}">
+                        Đang giao <span class="badge bg-info text-dark ms-1 rounded-pill">{{ status_group.get('Đang giao', 0) }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if status_tab == 'Hoàn tất' %}active fw-bold text-success{% else %}text-secondary{% endif %}" 
+                       href="{{ url_for('admin_orders', status='Hoàn tất', q=search) }}">
+                        Hoàn tất <span class="badge bg-success ms-1 rounded-pill">{{ status_group.get('Hoàn tất', 0) }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if status_tab == 'Đã huỷ' %}active fw-bold text-danger{% else %}text-secondary{% endif %}" 
+                       href="{{ url_for('admin_orders', status='Đã huỷ', q=search) }}">
+                        Đã huỷ <span class="badge bg-secondary ms-1 rounded-pill">{{ status_group.get('Đã huỷ', 0) }}</span>
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Ô tìm kiếm đơn hàng -->
+            <form method="GET" action="{{ url_for('admin_orders') }}" class="d-flex gap-2 mb-2">
+                <input type="hidden" name="status" value="{{ status_tab }}">
+                <div class="input-group input-group-sm" style="min-width: 250px;">
+                    <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Mã đơn, tên, số ĐT...">
+                </div>
+                <button type="submit" class="btn btn-sm btn-secondary">Tìm</button>
+                {% if search %}
+                <a href="{{ url_for('admin_orders', status=status_tab) }}" class="btn btn-sm btn-outline-secondary" title="Xóa tìm kiếm">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- BẢNG ĐƠN HÀNG -->
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3" style="width: 75px;">Mã đơn</th>
+                        <th>Ngày tạo</th>
+                        <th>Khách hàng</th>
+                        <th>Địa chỉ giao</th>
+                        <th class="text-center">Thanh toán</th>
+                        <th class="text-end">Tổng tiền</th>
+                        <th class="text-center">Trạng thái</th>
+                        <th class="text-end pe-3" style="width: 100px;">Chi tiết</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if orders %}
+                        {% for order in orders %}
+                        <tr>
+                            <td class="ps-3 fw-bold text-primary">#{{ order.id }}</td>
+                            <td>
+                                <div>{{ order.created_at.strftime('%d/%m/%Y') }}</div>
+                                <small class="text-muted">{{ order.created_at.strftime('%H:%M') }}</small>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ order.customer_name }}</div>
+                                <small class="text-muted">{{ order.phone }}</small>
+                            </td>
+                            <td>
+                                <div class="text-truncate" style="max-width: 220px;" title="{{ order.address }}">
+                                    {{ order.address }}
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                {% if order.payment_method == 'COD' %}
+                                <span class="badge bg-light text-dark border">COD</span>
+                                {% else %}
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">Chuyển khoản</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end fw-bold text-danger">
+                                {{ "{:,.0f}".format(order.total_amount) }}đ
+                            </td>
+                            <td class="text-center">
+                                {% if order.status == 'Chờ xác nhận' %}
+                                <span class="badge bg-warning text-dark px-2 py-1">Chờ xác nhận</span>
+                                {% elif order.status == 'Đang giao' %}
+                                <span class="badge bg-info text-dark px-2 py-1">Đang giao</span>
+                                {% elif order.status == 'Hoàn tất' %}
+                                <span class="badge bg-success px-2 py-1">Hoàn tất</span>
+                                {% elif order.status == 'Đã huỷ' %}
+                                <span class="badge bg-secondary px-2 py-1">Đã huỷ</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-3">
+                                <a href="{{ url_for('admin_order_detail', id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                                    Xem <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-receipt-cutoff fs-1 d-block mb-2 text-secondary"></i>
+                                Không có đơn hàng nào trong mục này.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- DÒNG TỔNG KẾT & PHÂN TRANG -->
+    <div class="card-footer bg-light py-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <!-- TỔNG KẾT THEO BỘ LỌC HIỆN TẠI -->
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-muted small">
+                    Tổng đơn lọc được: <strong>{{ current_filter_count }}</strong> đơn
+                </span>
+                <span class="text-muted">|</span>
+                <span class="text-muted small">
+                    Tổng giá trị: <strong class="text-danger fs-6">{{ "{:,.0f}".format(current_filter_total_value) }} VNĐ</strong>
+                </span>
+            </div>
+
+            <!-- NÚT PHÂN TRANG (10 ĐƠN / TRANG) -->
+            {% if pagination.pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin_orders', page=pagination.prev_num, status=status_tab, q=search) }}">
+                            &laquo; Trước
+                        </a>
+                    </li>
+                    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if p %}
+                            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('admin_orders', page=p, status=status_tab, q=search) }}">
+                                    {{ p }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin_orders', page=pagination.next_num, status=status_tab, q=search) }}">
+                            Sau &raquo;
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

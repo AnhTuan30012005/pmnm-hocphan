@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} · Nhà sách Sông Hương{% endblock %}
+
+{% block content %}
+<!-- Màn hình ②: Chọn sách chi tiết -->
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{{ url_for('book_list') }}" class="text-decoration-none">Sách</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('book_list', category_id=book.category_id) }}" class="text-decoration-none">{{ book.category.name }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ book.title }}</li>
+    </ol>
+</nav>
+
+<div class="card p-4 shadow-sm border-0">
+    <div class="row g-4">
+        <!-- Cột Ảnh bìa -->
+        <div class="col-md-4 text-center">
+            {% if book.image %}
+            <img src="{{ url_for('static', filename='uploads/' ~ book.image) }}" class="img-fluid rounded shadow-sm border" style="max-height: 400px; object-fit: cover;" alt="{{ book.title }}">
+            {% else %}
+            <div class="bg-light rounded d-flex align-items-center justify-content-center border" style="height: 380px;">
+                <div class="text-center text-muted">
+                    <i class="bi bi-book fs-1 opacity-50"></i>
+                    <p class="mt-2 small">Ảnh bìa</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Cột Chi tiết sách -->
+        <div class="col-md-8">
+            <h2 class="fw-bold text-dark mb-2">{{ book.title }}</h2>
+            <p class="text-muted mb-3 fs-6">
+                Tác giả: <strong class="text-dark">{{ book.author }}</strong> · {{ book.publisher or 'NXB Đại học Huế' }}, {{ book.year }}
+            </p>
+
+            <div class="p-3 bg-light rounded-3 mb-3">
+                <span class="fs-2 fw-bold text-danger">{{ book.price | vnd }}</span>
+            </div>
+
+            <div class="mb-3">
+                <span class="text-muted d-block mb-1">Danh mục: <strong class="text-primary">{{ book.category.name }}</strong></span>
+                {% if book.stock > 0 %}
+                <span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>● Còn {{ book.stock }} cuốn</span>
+                {% else %}
+                <span class="text-danger fw-semibold"><i class="bi bi-x-circle-fill me-1"></i>Hết hàng</span>
+                {% endif %}
+            </div>
+
+            {% if book.description %}
+            <div class="mb-4">
+                <h6 class="fw-bold text-secondary mb-1">Mô tả sách:</h6>
+                <p class="text-secondary small">{{ book.description }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Form Chọn số lượng & Thêm vào giỏ -->
+            {% if book.stock > 0 and max_can_add > 0 %}
+            <form action="{{ url_for('add_to_cart', book_id=book.id) }}" method="POST" class="pt-3 border-top">
+                <div class="row g-3 align-items-center">
+                    <div class="col-auto">
+                        <label class="form-label fw-bold mb-0">Số lượng:</label>
+                    </div>
+                    <div class="col-auto">
+                        <div class="input-group" style="width: 140px;">
+                            <button class="btn btn-outline-secondary" type="button" id="btn-minus">−</button>
+                            <input type="number" name="quantity" id="quantity-input" class="form-control text-center fw-bold" value="1" min="1" max="{{ max_can_add }}">
+                            <button class="btn btn-outline-secondary" type="button" id="btn-plus">+</button>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <small class="text-muted">
+                            tối đa {{ max_can_add }} {% if in_cart_qty > 0 %}(đã có {{ in_cart_qty }} trong giỏ){% endif %}
+                        </small>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary px-4 py-2 fw-bold shadow-sm">
+                        🛒 Thêm vào giỏ hàng
+                    </button>
+                    <a href="{{ url_for('book_list') }}" class="btn btn-outline-secondary ms-2 py-2">
+                        ← Tiếp tục xem sách
+                    </a>
+                </div>
+            </form>
+            {% elif book.stock > 0 and max_can_add <= 0 %}
+            <div class="alert alert-warning">
+                <i class="bi bi-info-circle me-1"></i>
+                Bạn đã thêm toàn bộ số lượng sách có sẵn trong kho (<strong>{{ in_cart_qty }} cuốn</strong>) vào giỏ hàng.
+                <div class="mt-2">
+                    <a href="{{ url_for('view_cart') }}" class="btn btn-warning btn-sm text-dark fw-bold">
+                        Xem giỏ hàng ngay →
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-secondary">
+                <i class="bi bi-exclamation-circle me-1"></i>
+                Rất tiếc, cuốn sách này hiện đang hết hàng.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const input = document.getElementById("quantity-input");
+        const btnMinus = document.getElementById("btn-minus");
+        const btnPlus = document.getElementById("btn-plus");
+
+        if (input && btnMinus && btnPlus) {
+            const maxVal = parseInt(input.getAttribute("max")) || 1;
+
+            btnMinus.addEventListener("click", function () {
+                let current = parseInt(input.value) || 1;
+                if (current > 1) {
+                    input.value = current - 1;
+                }
+            });
+
+            btnPlus.addEventListener("click", function () {
+                let current = parseInt(input.value) || 1;
+                if (current < maxVal) {
+                    input.value = current + 1;
+                }
+            });
+
+            input.addEventListener("change", function () {
+                let val = parseInt(input.value) || 1;
+                if (val < 1) val = 1;
+                if (val > maxVal) val = maxVal;
+                input.value = val;
+            });
+        }
+    });
+</script>
+{% endblock %}
